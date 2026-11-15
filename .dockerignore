@@ -1,0 +1,13 @@
+.git
+.venv
+data
+models
+vendor
+work
+.env
+frontend/node_modules
+frontend/dist
+**/__pycache__
+.pytest_cache
+*.edf
+*.pth
