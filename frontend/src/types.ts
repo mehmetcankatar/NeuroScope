@@ -1,0 +1,11 @@
+export type Head = 'abnormal' | 'seizure' | 'sleep';
+export type Recording = {id:string;name:string;kind:'synthetic'|'edf';duration_s:number;sample_rate:number;channels:string[];source:string;warnings:string[];capabilities:Record<Head,{supported:boolean;reason:string}>};
+export type Run = {id:string;recording_id:string;status:string;progress:number;source:string;message:string;created:number;runtime_s?:number;tasks:Partial<Record<Head,{status:string;error?:string}>>;config:{heads:Head[];enter_threshold:number;exit_threshold:number;persistence_s:number;merge_gap_s:number}};
+export type Review = {id:string;decision:string;note:string;author:string;created:number;start_s:number|null;end_s:number|null;label:string|null;target_id:string};
+export type Event = {id:string;head:string;label:string;start_s:number;end_s:number;peak_score:number|null;mean_score:number|null;support_start_s?:number;support_end_s?:number;decision:string;review?:Review;reviewed_start_s?:number|null;reviewed_end_s?:number|null;reviewed_label?:string|null};
+export type SleepEpoch = {id:string;start_s:number;end_s:number;stage:string;scores:Record<string,number>;coverage:number;decision:string;review?:Review;reviewed_label?:string|null;reviewed_start_s?:number|null;reviewed_end_s?:number|null};
+export type Results = {events:Event[];sleep:SleepEpoch[];source:string;notice:string;coverage:Partial<Record<Head,{scored_s:number;total_s:number;fraction:number}>>;quality:Partial<Record<Head,{start_s:number;end_s:number;reason:string}[]>>;provenance:Record<string,unknown>;annotations:Review[];run:Run;recording:Recording};
+export type Models = {heads:Record<Head,{ready:boolean;reason:string}>;license:string};
+export type WaveformData = {times:number[];channels:{name:string;min:(number|null)[];max:(number|null)[]}[];units:string;montage:string;decimated:boolean};
+export type ScoreData = {times:number[];scores:(number|null)[][];classes:string[];valid:boolean[]};
+export type Selection = {type:'event';item:Event}|{type:'sleep';item:SleepEpoch};

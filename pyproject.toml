@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neuroscope"
+version = "0.1.0"
+description = "An evidence-linked EEG review workspace powered by MORGOTH"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+  "fastapi==0.115.12", "uvicorn==0.34.3", "python-multipart==0.0.20",
+  "pydantic==2.11.7", "numpy==1.26.4", "scipy==1.14.1", "mne==1.8.0"
+]
+
+[project.optional-dependencies]
+dev = ["pytest==8.4.0", "httpx==0.28.1", "edfio==0.4.8"]
+morgoth = ["torch==2.4.1", "torchvision==0.19.1", "timm==1.0.11", "einops==0.8.0",
+  "tensorboardX==2.6.2.2", "pyhealth==1.1.6", "pandas==2.2.3", "scikit-learn==1.5.2",
+  "h5py==3.12.1", "hdf5storage==0.1.19", "mat73==0.65"]
+
+[project.scripts]
+neuroscope = "neuroscope.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["backend"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["backend"]

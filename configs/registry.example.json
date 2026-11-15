@@ -1,0 +1,10 @@
+{
+  "upstream_commit": "3e449003287465127b441f492263579c805c741d",
+  "source_dir": "/absolute/path/to/vendor/morgoth",
+  "source_hashes": {},
+  "heads": {
+    "abnormal": {"checkpoint": "/absolute/path/to/NORMAL.pth", "sha256": "GENERATED_BY_SETUP_SCRIPT", "positive_class": "VERIFY_WITH_CHECKPOINT_METADATA"},
+    "seizure": {"checkpoint": "/absolute/path/to/IIIC.pth", "sha256": "GENERATED_BY_SETUP_SCRIPT"},
+    "sleep": {"checkpoint": "/absolute/path/to/SLEEPPSG.pth", "sha256": "GENERATED_BY_SETUP_SCRIPT"}
+  }
+}
