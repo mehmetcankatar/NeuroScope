@@ -1,0 +1,29 @@
+{
+  "method": "Whole-record preprocessing vs 600-second chunks with 30-second context; fixed boundary and event windows",
+  "windows_s": [
+    0,
+    2,
+    588,
+    590,
+    598,
+    600,
+    602,
+    1198,
+    1200,
+    1798,
+    1800,
+    2398,
+    2400,
+    2990,
+    2996,
+    2998,
+    3000,
+    3036,
+    3590
+  ],
+  "max_absolute_score_difference": 5.692243576049805e-06,
+  "tolerance": 0.01,
+  "passed": true,
+  "input_sha256": "4c4a95a9b4331aeaadadd538763eb2e735950d9aa615b85ee6246c784be8ae90",
+  "conversion_max_error": 0.0
+}

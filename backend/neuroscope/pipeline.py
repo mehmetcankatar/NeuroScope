@@ -102,6 +102,25 @@ def quality_intervals(starts, valid, duration_s, window_s=10, stride_s=1):
     return gaps, sum(b - a for a, b in covered)
 
 
+def build_native_sleep(run_id, starts, scores, valid, duration_s):
+    """Preserve YASA's native 30-second grid, without artificial 1-Hz expansion."""
+    lookup = {float(t): i for i, t in enumerate(starts)}
+    result = []
+    for start in np.arange(0, duration_s, 30.):
+        i = lookup.get(float(start))
+        usable = i is not None and valid[i] and start + 30 <= duration_s
+        probabilities = scores[i] if usable else np.zeros(5)
+        rank = np.sort(probabilities)
+        stage = CLASSES['sleep'][int(probabilities.argmax())] if usable else 'Unscored'
+        if usable and (rank[-1] < .5 or rank[-1] - rank[-2] < .1):
+            stage = 'Uncertain'
+        result.append({'id': stable_id(run_id, 'sleep', start), 'start_s': float(start),
+                       'end_s': min(float(start + 30), duration_s), 'stage': stage,
+                       'scores': dict(zip(CLASSES['sleep'], map(float, probabilities))),
+                       'coverage': 1. if usable else 0., 'decision': 'unreviewed'})
+    return result
+
+
 def apply_reviews(events, sleep, annotations):
     events = [dict(e) for e in events]
     sleep = [dict(e) for e in sleep]

@@ -1,0 +1,464 @@
+{
+  "scope": "Two recordings, no tuning; not clinical validation or a guaranteed independent held-out cohort",
+  "files": [
+    {
+      "name": "chb01_03.edf",
+      "url": "https://physionet.org/files/chbmit/1.0.0/chb01/chb01_03.edf",
+      "sha256": "4c4a95a9b4331aeaadadd538763eb2e735950d9aa615b85ee6246c784be8ae90"
+    },
+    {
+      "name": "chb01-summary.txt",
+      "url": "https://physionet.org/files/chbmit/1.0.0/chb01/chb01-summary.txt",
+      "sha256": "77e86183845192d147c88a9bb4263c2b4a32e936c6236029770f86ca2ea023db"
+    },
+    {
+      "name": "SC4001E0-PSG.edf",
+      "url": "https://physionet.org/files/sleep-edfx/1.0.0/sleep-cassette/SC4001E0-PSG.edf",
+      "sha256": "2b40a18adf76af69a42d6db1f30f31d26b369f6d27ca0050ef30147ef892b131"
+    },
+    {
+      "name": "SC4001EC-Hypnogram.edf",
+      "url": "https://physionet.org/files/sleep-edfx/1.0.0/sleep-cassette/SC4001EC-Hypnogram.edf",
+      "sha256": "a4cf67694ade1b52a0ddd06d5817fd45d2d3e8bac5302f640f3e9cfbbf12a996"
+    }
+  ],
+  "records": {
+    "chb01_03.edf": {
+      "recording_id": "d13ed205a1de4eeea216a33c69f557da",
+      "run_id": "1ee6187cd1114dadaaaec273d49ea346",
+      "duration_s": 3600.0,
+      "runtime_s": 80.57,
+      "coverage": {
+        "seizure": {
+          "scored_s": 3592.0,
+          "total_s": 3600.0,
+          "fraction": 0.9977777777777778
+        }
+      },
+      "config": {
+        "heads": [
+          "seizure"
+        ],
+        "enter_threshold": 0.7,
+        "exit_threshold": 0.45,
+        "persistence_s": 3,
+        "merge_gap_s": 2
+      },
+      "metrics": {
+        "matching_rule": "one-to-one maximum matching; strictly positive temporal overlap; no tolerance",
+        "true_positives": 1,
+        "false_positives": 7,
+        "false_negatives": 0,
+        "event_sensitivity": 1.0,
+        "precision": 0.125,
+        "false_alarms_per_hour": 7.0,
+        "onset_errors_s": [
+          0.0
+        ],
+        "offset_errors_s": [
+          26.0
+        ],
+        "mean_absolute_onset_error_s": 0.0
+      },
+      "reference": [
+        {
+          "start_s": 2996.0,
+          "end_s": 3036.0
+        }
+      ],
+      "candidates": [
+        {
+          "start_s": 172.0,
+          "end_s": 182.0,
+          "peak_score": 0.7377611398696899
+        },
+        {
+          "start_s": 258.0,
+          "end_s": 272.0,
+          "peak_score": 0.77275151014328
+        },
+        {
+          "start_s": 280.0,
+          "end_s": 288.0,
+          "peak_score": 0.7795555591583252
+        },
+        {
+          "start_s": 344.0,
+          "end_s": 352.0,
+          "peak_score": 0.7647258043289185
+        },
+        {
+          "start_s": 408.0,
+          "end_s": 412.0,
+          "peak_score": 0.7038227915763855
+        },
+        {
+          "start_s": 436.0,
+          "end_s": 444.0,
+          "peak_score": 0.8238676190376282
+        },
+        {
+          "start_s": 1728.0,
+          "end_s": 1732.0,
+          "peak_score": 0.7424683570861816
+        },
+        {
+          "start_s": 2996.0,
+          "end_s": 3062.0,
+          "peak_score": 0.9958678483963013
+        }
+      ]
+    },
+    "SC4001E0-PSG.edf": {
+      "recording_id": "3ed7bca69a97458b855e4f123f88cf02",
+      "run_id": "8a305e37f7c2445190418928d8a4f703",
+      "duration_s": 79500.0,
+      "runtime_s": 9.88,
+      "coverage": {
+        "sleep": {
+          "scored_s": 79500.0,
+          "total_s": 79500.0,
+          "fraction": 1.0
+        }
+      },
+      "config": {
+        "heads": [
+          "sleep"
+        ],
+        "enter_threshold": 0.7,
+        "exit_threshold": 0.45,
+        "persistence_s": 3,
+        "merge_gap_s": 2
+      },
+      "displayed_full_record": {
+        "reference_epochs": 2650,
+        "scored_epochs": 2534,
+        "coverage": 0.9562264150943396,
+        "accuracy": 0.9427782162588793,
+        "cohen_kappa": 0.8519964150126381,
+        "labels": [
+          "Awake",
+          "N1",
+          "N2",
+          "N3",
+          "REM"
+        ],
+        "confusion_matrix_true_rows": [
+          [
+            1926,
+            8,
+            3,
+            0,
+            3
+          ],
+          [
+            16,
+            17,
+            11,
+            2,
+            3
+          ],
+          [
+            2,
+            0,
+            206,
+            23,
+            6
+          ],
+          [
+            0,
+            0,
+            25,
+            187,
+            0
+          ],
+          [
+            28,
+            6,
+            9,
+            0,
+            53
+          ]
+        ],
+        "per_stage": {
+          "Awake": {
+            "precision": 0.9766734279918864,
+            "recall": 0.9927835051546392,
+            "f1": 0.9846625766871165
+          },
+          "N1": {
+            "precision": 0.5483870967741935,
+            "recall": 0.3469387755102041,
+            "f1": 0.425
+          },
+          "N2": {
+            "precision": 0.8110236220472441,
+            "recall": 0.869198312236287,
+            "f1": 0.8391038696537678
+          },
+          "N3": {
+            "precision": 0.8820754716981132,
+            "recall": 0.8820754716981132,
+            "f1": 0.8820754716981132
+          },
+          "REM": {
+            "precision": 0.8153846153846154,
+            "recall": 0.5520833333333334,
+            "f1": 0.6583850931677019
+          }
+        },
+        "macro_f1_present_classes": 0.7578454022413399,
+        "scored_reference_fraction": 0.9562264150943396,
+        "epoch_alignment": "Exact interval match; unscored/uncertain predictions excluded and counted in coverage"
+      },
+      "raw_argmax_full_record": {
+        "reference_epochs": 2650,
+        "scored_epochs": 2650,
+        "coverage": 1.0,
+        "accuracy": 0.9237735849056604,
+        "cohen_kappa": 0.8125897139656199,
+        "labels": [
+          "Awake",
+          "N1",
+          "N2",
+          "N3",
+          "REM"
+        ],
+        "confusion_matrix_true_rows": [
+          [
+            1957,
+            15,
+            17,
+            1,
+            7
+          ],
+          [
+            20,
+            20,
+            12,
+            2,
+            4
+          ],
+          [
+            3,
+            0,
+            216,
+            25,
+            6
+          ],
+          [
+            0,
+            0,
+            28,
+            192,
+            0
+          ],
+          [
+            40,
+            10,
+            12,
+            0,
+            63
+          ]
+        ],
+        "per_stage": {
+          "Awake": {
+            "precision": 0.9688118811881188,
+            "recall": 0.9799699549323986,
+            "f1": 0.9743589743589743
+          },
+          "N1": {
+            "precision": 0.4444444444444444,
+            "recall": 0.3448275862068966,
+            "f1": 0.3883495145631068
+          },
+          "N2": {
+            "precision": 0.7578947368421053,
+            "recall": 0.864,
+            "f1": 0.8074766355140187
+          },
+          "N3": {
+            "precision": 0.8727272727272727,
+            "recall": 0.8727272727272727,
+            "f1": 0.8727272727272727
+          },
+          "REM": {
+            "precision": 0.7875,
+            "recall": 0.504,
+            "f1": 0.6146341463414634
+          }
+        },
+        "macro_f1_present_classes": 0.7315093087009672,
+        "scored_reference_fraction": 1.0,
+        "epoch_alignment": "Exact interval match; unscored/uncertain predictions excluded and counted in coverage"
+      },
+      "displayed_sleep_period": {
+        "reference_epochs": 841,
+        "scored_epochs": 760,
+        "coverage": 0.9036860879904876,
+        "accuracy": 0.8131578947368421,
+        "cohen_kappa": 0.7502106266954292,
+        "labels": [
+          "Awake",
+          "N1",
+          "N2",
+          "N3",
+          "REM"
+        ],
+        "confusion_matrix_true_rows": [
+          [
+            155,
+            8,
+            0,
+            0,
+            3
+          ],
+          [
+            16,
+            17,
+            11,
+            2,
+            3
+          ],
+          [
+            2,
+            0,
+            206,
+            23,
+            6
+          ],
+          [
+            0,
+            0,
+            25,
+            187,
+            0
+          ],
+          [
+            28,
+            6,
+            9,
+            0,
+            53
+          ]
+        ],
+        "per_stage": {
+          "Awake": {
+            "precision": 0.7711442786069652,
+            "recall": 0.9337349397590361,
+            "f1": 0.8446866485013624
+          },
+          "N1": {
+            "precision": 0.5483870967741935,
+            "recall": 0.3469387755102041,
+            "f1": 0.425
+          },
+          "N2": {
+            "precision": 0.8207171314741036,
+            "recall": 0.869198312236287,
+            "f1": 0.8442622950819673
+          },
+          "N3": {
+            "precision": 0.8820754716981132,
+            "recall": 0.8820754716981132,
+            "f1": 0.8820754716981132
+          },
+          "REM": {
+            "precision": 0.8153846153846154,
+            "recall": 0.5520833333333334,
+            "f1": 0.6583850931677019
+          }
+        },
+        "macro_f1_present_classes": 0.7308819016898289,
+        "scored_reference_fraction": 0.9036860879904876,
+        "epoch_alignment": "Exact interval match; unscored/uncertain predictions excluded and counted in coverage"
+      },
+      "raw_argmax_sleep_period": {
+        "reference_epochs": 841,
+        "scored_epochs": 841,
+        "coverage": 1.0,
+        "accuracy": 0.7835909631391201,
+        "cohen_kappa": 0.7143630263015478,
+        "labels": [
+          "Awake",
+          "N1",
+          "N2",
+          "N3",
+          "REM"
+        ],
+        "confusion_matrix_true_rows": [
+          [
+            168,
+            12,
+            2,
+            0,
+            6
+          ],
+          [
+            20,
+            20,
+            12,
+            2,
+            4
+          ],
+          [
+            3,
+            0,
+            216,
+            25,
+            6
+          ],
+          [
+            0,
+            0,
+            28,
+            192,
+            0
+          ],
+          [
+            40,
+            10,
+            12,
+            0,
+            63
+          ]
+        ],
+        "per_stage": {
+          "Awake": {
+            "precision": 0.7272727272727273,
+            "recall": 0.8936170212765957,
+            "f1": 0.801909307875895
+          },
+          "N1": {
+            "precision": 0.47619047619047616,
+            "recall": 0.3448275862068966,
+            "f1": 0.4
+          },
+          "N2": {
+            "precision": 0.8,
+            "recall": 0.864,
+            "f1": 0.8307692307692308
+          },
+          "N3": {
+            "precision": 0.8767123287671232,
+            "recall": 0.8727272727272727,
+            "f1": 0.8747152619589977
+          },
+          "REM": {
+            "precision": 0.7974683544303798,
+            "recall": 0.504,
+            "f1": 0.6176470588235294
+          }
+        },
+        "macro_f1_present_classes": 0.7050081718855307,
+        "scored_reference_fraction": 1.0,
+        "epoch_alignment": "Exact interval match; unscored/uncertain predictions excluded and counted in coverage"
+      },
+      "sleep_period_s": [
+        28830.0,
+        54060.0
+      ],
+      "uncertain_epochs": 116
+    }
+  }
+}

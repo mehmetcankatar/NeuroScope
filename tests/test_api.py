@@ -62,7 +62,7 @@ def test_uploaded_recording_never_uses_synthetic_fallback(env):
     client,store,_=env
     record=client.post('/api/demo').json();record['id']='real-file';record['kind']='edf'
     store.add_recording(record)
-    response=client.post('/api/recordings/real-file/analyses',json={})
+    response=client.post('/api/recordings/real-file/analyses',json={'heads':['seizure']})
     assert response.status_code==409
     assert 'checkpoint' in response.text.lower()
 
@@ -83,3 +83,35 @@ def test_threshold_validation(env):
     client,_,_=env
     rec=client.post('/api/demo').json()
     assert client.post(f'/api/recordings/{rec["id"]}/analyses',json={'enter_threshold':.4,'exit_threshold':.8}).status_code==422
+
+
+def test_real_edf_import_serializes_metadata(env, tmp_path):
+    import mne
+    import numpy as np
+    from neuroscope.config import EEG_CHANNELS
+    client, store, _ = env
+    raw = mne.io.RawArray(np.tile(np.sin(np.arange(4000) / 10) * 20e-6, (19, 1)),
+                         mne.create_info(EEG_CHANNELS, 200, 'eeg'), verbose='ERROR')
+    path = tmp_path / 'input.edf'
+    raw.export(path, fmt='edf', overwrite=True, verbose='ERROR')
+    response = client.post('/api/recordings', files={'file': ('input.edf', path.read_bytes())})
+    assert response.status_code == 201, response.text
+    record = response.json()
+    assert record['n_samples'] == 4000
+    assert record['channel_rates']['C3'] == 200
+    assert store.recording(record['id'])['sha256'] == record['sha256']
+    assert record['capabilities']['seizure']['supported']
+    assert not record['capabilities']['abnormal']['supported']
+
+
+def test_omitted_heads_select_only_supported_ready_models(env, monkeypatch):
+    client, store, _ = env
+    record = client.post('/api/demo').json()
+    record['kind'] = 'edf'; record['id'] = 'compatible-sleep'
+    for h in record['capabilities']:
+        record['capabilities'][h]['supported'] = h == 'sleep'
+    store.add_recording(record)
+    monkeypatch.setattr('neuroscope.api.model_status', lambda _: {h: {'ready': h == 'sleep'} for h in record['capabilities']})
+    response = client.post('/api/recordings/compatible-sleep/analyses', json={})
+    assert response.status_code == 202
+    assert response.json()['config']['heads'] == ['sleep']

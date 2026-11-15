@@ -11,7 +11,8 @@ WORKDIR /app
 COPY pyproject.toml README.md ./
 COPY backend/ backend/
 COPY scripts/ scripts/
-RUN python -m pip install --no-cache-dir .
+ARG INSTALL_OPEN_MODELS=0
+RUN if [ "$INSTALL_OPEN_MODELS" = "1" ]; then python -m pip install --no-cache-dir ".[open-models]"; else python -m pip install --no-cache-dir .; fi
 COPY --from=ui /app/frontend/dist frontend/dist
 RUN useradd --create-home neuroscope && mkdir -p /app/data && chown -R neuroscope:neuroscope /app
 USER neuroscope

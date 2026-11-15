@@ -17,14 +17,30 @@ pnpm build
 
 See `BUILD_REPORT.md` for checks actually completed during delivery. This file defines validation scope rather than asserting a test run occurred.
 
-## What remains unverified
+## Public-model validation
 
-- Authorized MORGOTH weights were not available during initial development. Real inference, output parity, model class polarity, runtime, GPU memory, and clinical performance are not claimed as tested.
-- Chunk context and preprocessing seams require comparison against unchunked inference with real checkpoints.
-- The strict loader may expose upstream checkpoint/version incompatibilities. These must be resolved against the pinned author source; do not disable checks to obtain plausible-looking output.
-- Event thresholds and sleep aggregation rules are provisional engineering settings.
-- No independent clinician usability study or time-saving study has been performed.
-- Real patient diagnosis, seizure prediction before onset, emergency alerts, apnea, arousals, and limb-movement detection are outside scope.
+Real inference was exercised through the running API and worker on one CHB-MIT recording and one Sleep-EDF recording. See [BUILD_REPORT.md](BUILD_REPORT.md), [public-validation.json](public-validation.json), and [sparcnet-parity.json](sparcnet-parity.json) for actual results. The public recordings include substantial non-event/wake time. No thresholds were tuned on these examples.
+
+Reproduce after installing the public models and starting the app:
+
+```bash
+python scripts/download_examples.py
+python scripts/validate_public_examples.py
+```
+
+The script verifies dataset hashes before import. Seizure annotations are read from the separate CHB summary after model inference. Sleep annotations are read from the separate hypnogram; old stages 3 and 4 are combined as N3, while movement/unknown reference epochs are excluded. Intervals use recording-relative seconds.
+
+Sleep results report both raw argmax stages and displayed stages after uncertainty filtering, with coverage. Full-record accuracy is dominated by wake time, so the report separately evaluates the reference sleep period plus 30 minutes before/after. The latter crop is used only for evaluation; inference processes the whole recording. Poor N1/REM results must not be hidden by the full-record aggregate.
+
+## Remaining limitations
+
+- Two records establish functional operation, not clinical performance or robust generalization. Training-cohort overlap has not been audited; this is not a guaranteed independent test set.
+- The seizure example produces seven false alarms per hour at default thresholds. The matched event ends 26 seconds after the reference. Review is required, and these settings are not validated for automated alerts.
+- N1 and REM classification is substantially weaker than overall sleep agreement. Montage, age, pathology, artifacts and domain differences can affect both models.
+- Broad abnormality is unavailable with public models. SPaRCNet Other is not normal. LPD/GPD/LRDA/GRDA outputs are supported technically but not assessed against labels in these two examples.
+- The architecture conversion probe and selected full-record/chunk seam comparisons pass; this is not exhaustive equivalence testing across all EDF rates and montages. NeuroScope includes the final complete seizure window that the author's loop omits.
+- Authorized MORGOTH weights, GPU inference, Docker deployment, clinician usability, clinical outcomes and time savings were not validated here.
+- Diagnosis, seizure prediction before onset, emergency alerts, apnea, arousals, and limb-movement detection are outside scope.
 
 ## Reference annotations
 
