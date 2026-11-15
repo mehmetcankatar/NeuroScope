@@ -34,7 +34,9 @@ def test_real_edf_round_trip(tmp_path):
     raw.export(path,fmt='edf',overwrite=True,verbose='ERROR')
     result=inspect_edf(path,'test','signal.edf')
     assert result['duration_s'] == 20
-    assert all(c['supported'] for c in result['capabilities'].values())
+    assert result['capabilities']['seizure']['supported']
+    assert not result['capabilities']['abnormal']['supported']
+    assert not result['capabilities']['sleep']['supported']  # shorter than 5 minutes
     displayed=waveform(result,5,6,[result['channels'][0]],300)
     assert displayed['times'][0] == 5
     assert max(displayed['channels'][0]['max']) > 19
