@@ -84,7 +84,7 @@ def main():
     prediction = json.loads(args.predictions.read_text()); truth = json.loads(args.truth.read_text())
     if prediction["recording"]["id"] != truth["recording_id"]:
         raise ValueError("Ground truth is for a different recording")
-    if prediction["source"] != "morgoth":
+    if prediction["source"] not in ("morgoth", "pretrained-models"):
         raise ValueError("Synthetic demonstrations are not model performance evaluations")
     result = {"recording_id": truth["recording_id"], "provenance": prediction["provenance"], "coverage": prediction["coverage"]}
     if "seizures" in truth:
