@@ -40,6 +40,17 @@ Open [http://127.0.0.1:8000](http://127.0.0.1:8000), choose **Import EDF**, then
 
 For UI/demo development only, install `.[dev]` and skip model setup. **Explore the demo** creates synthetic signals and scripted scores.
 
+## Open the two real examples with saved analyses
+
+After installing dependencies and building the interface, run:
+
+```bash
+python scripts/load_examples.py
+python -m neuroscope
+```
+
+Open **Recordings** to select the CHB-MIT seizure example or the Sleep-EDF example. Their saved real-model analyses are included in the repository; the original EDF files download from PhysioNet with verified hashes. Loading saved results does not need model weights. Install the models to analyze new uploads or rerun these examples. For a custom data directory, pass `--data-dir` to the loader and use the same `NEUROSCOPE_DATA_DIR` for the app. See [example details](examples/README.md).
+
 ## Try public recordings
 
 ```bash
