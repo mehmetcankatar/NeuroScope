@@ -15,7 +15,8 @@ class AnalysisRequest(BaseModel):
     def validate_thresholds(self):
         if self.exit_threshold > self.enter_threshold:
             raise ValueError("Exit threshold must not exceed enter threshold")
-        self.heads = list(dict.fromkeys(self.heads))
+        # Preserve whether heads was explicitly supplied for automatic task selection.
+        self.heads[:] = list(dict.fromkeys(self.heads))
         return self
 
 

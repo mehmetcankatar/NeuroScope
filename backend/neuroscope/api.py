@@ -77,7 +77,7 @@ def create_app(settings=None):
     @app.get("/api/models")
     def models():
         return {"heads": model_status(settings), "research_only": True,
-                "license": "MORGOTH code: CC BY-NC 4.0", "demo_available": True}
+                "license": "See THIRD_PARTY_NOTICES.md for SPaRCNet, YASA and optional MORGOTH terms", "demo_available": True}
 
     @app.get("/api/recordings")
     def recordings():
@@ -132,6 +132,11 @@ def create_app(settings=None):
     def analyze(id: str, config: AnalysisRequest):
         record = recording_or_404(id)
         readiness = model_status(settings)
+        if 'heads' not in config.model_fields_set:
+            config.heads = [h for h in config.heads if record['capabilities'][h]['supported'] and
+                            (record['kind'] == 'synthetic' or readiness[h]['ready'])]
+            if not config.heads:
+                raise HTTPException(409, 'No configured model supports this recording; inspect Model setup and recording capabilities')
         for head in config.heads:
             if not record["capabilities"][head]["supported"]:
                 raise HTTPException(422, f"{head}: {record['capabilities'][head]['reason']}")
@@ -141,7 +146,7 @@ def create_app(settings=None):
         if active:
             raise HTTPException(409, "An analysis is already active for this recording")
         run = {"id": new_id(), "recording_id": id, "config": config.model_dump(), "tasks": {},
-               "source": "synthetic" if record["kind"] == "synthetic" else "morgoth", "message": "Waiting for worker"}
+               "source": "synthetic" if record["kind"] == "synthetic" else "pretrained-models", "message": "Waiting for worker"}
         store.add_run(run)
         return store.run(run["id"])
 
@@ -189,7 +194,7 @@ def create_app(settings=None):
         if not path.is_file():
             return {"times": [], "scores": [], "classes": CLASSES[head], "valid": []}
         with np.load(path, allow_pickle=False) as data:
-            centers = data["starts"] + 5
+            centers = data["starts"] + (float(data['window_s']) / 2 if 'window_s' in data else 5)
             mask = (centers >= start) & (centers < end)
             values = data["scores"][mask]
             return {"times": centers[mask].tolist(), "scores": [[float(v) if np.isfinite(v) else None for v in row] for row in values],

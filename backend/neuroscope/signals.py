@@ -1,5 +1,6 @@
 """Recording validation and bounded waveform access; input references are never guessed."""
 import hashlib
+import os
 import re
 import time
 from pathlib import Path
@@ -69,7 +70,7 @@ def inspect_edf(path: Path, recording_id: str, display_name: str):
         raise ValueError("Discontinuous EDF+D is not supported yet. Export continuous segments separately to preserve timestamps.")
     raw = mne.io.read_raw_edf(path, preload=False, verbose="ERROR")
     try:
-        duration = raw.n_times / raw.info["sfreq"]
+        duration = float(raw.n_times / raw.info["sfreq"])
         if duration < 10:
             raise ValueError("At least 10 seconds of EEG is required")
         if duration > 7 * 24 * 3600 or raw.info["sfreq"] > 10000 or len(raw.ch_names) > 256:
@@ -77,13 +78,33 @@ def inspect_edf(path: Path, recording_id: str, display_name: str):
         if any("boundary" in a.lower() for a in raw.annotations.description):
             raise ValueError("Recording contains discontinuities; import continuous segments separately")
         caps, mapping, problems = capabilities(raw.ch_names)
+        n = int(header[252:256])
+        with path.open('rb') as header_file:
+            header_file.seek(256)
+            signal_header = header_file.read(256 * n)
+        record_seconds = float(header[244:252])
+        # EDF+ annotation channels remain in the file header but MNE excludes them.
+        signal_indices = [i for i in range(n) if signal_header[16*i:16*(i+1)].strip() not in
+                          (b'EDF Annotations', b'BDF Annotations')]
+        if len(signal_indices) != len(raw.ch_names):
+            raise ValueError('EDF channel header does not match the decoded signals')
+        rates = {name: int(signal_header[216*n+8*i:216*n+8*(i+1)]) / record_seconds
+                 for name, i in zip(raw.ch_names, signal_indices)}
         # Low-rate input cannot supply the spectrum expected by the model.
         if raw.info["sfreq"] < 128 or not float(raw.info["sfreq"]).is_integer():
             for cap in caps.values():
                 cap.update(supported=False, reason="MORGOTH requires an integer sampling rate of at least 128 Hz in this adapter")
+        if os.getenv('NEUROSCOPE_ENGINE', 'open') == 'open':
+            from .open_channels import open_capabilities
+            caps = open_capabilities(raw.ch_names, rates, duration)
+            problems = []
+            if caps['sleep']['supported']:
+                problems.append('YASA is trained on full-night PSG. Check EEG reference and recording suitability before interpreting sleep stages.')
+            if any(re.search(r'-\d+$', name) for name in raw.ch_names):
+                problems.append('Duplicate channel labels detected. Analysis verifies that duplicate derivations agree.')
         return {"id": recording_id, "name": display_name, "kind": "edf", "duration_s": duration,
-                "sample_rate": float(raw.info["sfreq"]), "n_samples": raw.n_times, "channels": raw.ch_names,
-                "mapping": mapping, "capabilities": caps, "warnings": problems,
+                "sample_rate": float(raw.info["sfreq"]), "n_samples": int(raw.n_times), "channels": raw.ch_names,
+                "mapping": mapping, "capabilities": caps, "warnings": problems, "channel_rates": rates,
                 "created": time.time(), "sha256": sha256_file(path), "time_basis": "recording-relative",
                 "source": "Uploaded recording", "path": str(path)}
     finally:

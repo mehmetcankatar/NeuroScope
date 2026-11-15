@@ -17,7 +17,7 @@ class Cancelled(Exception):
     pass
 
 
-def model_status(settings):
+def morgoth_status(settings):
     status = {h: {"ready": False, "reason": "Configure authorized MORGOTH checkpoints; see docs/MORGOTH.md"} for h in CLASSES}
     if not settings.registry.is_file():
         return status
@@ -134,3 +134,77 @@ def run_morgoth(settings, recording, head, run_dir, cancelled, progress):
     return result, {"checkpoint_sha256": digest, "upstream_commit": registry["upstream_commit"],
                     "window_s": 10, "stride_s": 1, "context_s": 30, "device": os.getenv("NEUROSCOPE_DEVICE", "cpu"),
                     "positive_class": cfg.get("positive_class"), "parity_status": "Requires validation with authorized checkpoint"}
+
+
+def model_status(settings):
+    import importlib.util
+    status = {
+        "abnormal": {"ready": False, "model": "Unavailable", "reason": "No validated broad abnormality checkpoint. SPaRCNet Other does not mean normal."},
+        "seizure": {"ready": False, "model": "SPaRCNet", "reason": "Run python scripts/setup_open_models.py to install the public checkpoint"},
+        "sleep": {"ready": False, "model": "YASA", "reason": "Install open-model dependencies and run python scripts/setup_open_models.py"}}
+    if not settings.registry.is_file():
+        return status
+    try:
+        registry = json.loads(settings.registry.read_text())
+        if registry.get("engine") != "open":
+            return morgoth_status(settings)
+        for head, key, dependency in [("seizure", "sparcnet", "torch"), ("sleep", "yasa", "yasa")]:
+            if key not in registry or importlib.util.find_spec(dependency) is None:
+                continue
+            cfg = registry[key]
+            if key == "sparcnet" and (not Path(cfg['checkpoint']).is_file() or sha256_file(cfg['checkpoint']) != cfg['sha256']):
+                status[head]['reason'] = 'SPaRCNet checkpoint missing or checksum mismatch'
+                continue
+            status[head].update(ready=True, reason="Configured for local inference; outputs require review")
+    except (ValueError, KeyError, OSError) as exc:
+        for head in ('seizure', 'sleep'):
+            status[head]['reason'] = str(exc)
+    return status
+
+
+def run_model(settings, recording, head, run_dir, cancelled, progress):
+    registry = json.loads(settings.registry.read_text())
+    if registry.get('engine') != 'open':
+        return run_morgoth(settings, recording, head, run_dir, cancelled, progress)
+    output = run_dir / f'{head}-native.npz'
+    provenance_path = run_dir / f'{head}-provenance.json'
+    progress_path = run_dir / f'{head}-progress.json'
+    request = run_dir / f'{head}-request.json'
+    atomic_json(request, {'registry': str(settings.registry), 'recording': recording, 'head': head,
+                         'output': str(output), 'provenance': str(provenance_path), 'progress': str(progress_path)})
+    env = dict(os.environ)
+    env.setdefault('MPLCONFIGDIR', str(settings.data_dir / 'matplotlib'))
+    env.setdefault('NUMBA_CACHE_DIR', str(settings.data_dir / 'numba'))
+    for name in ['OMP_NUM_THREADS', 'OPENBLAS_NUM_THREADS', 'MKL_NUM_THREADS']:
+        env[name] = '2'
+    log_path = run_dir / f'{head}-inference.log'
+    with log_path.open('w') as log:
+        process = subprocess.Popen([sys.executable, '-m', 'neuroscope.open_inference', str(request)], stdout=log, stderr=log, env=env)
+        began = time.monotonic()
+        try:
+            while process.poll() is None:
+                if cancelled():
+                    raise Cancelled()
+                if time.monotonic() - began > 7200:
+                    raise RuntimeError('Inference exceeded two hours; use a shorter recording')
+                try:
+                    fraction = json.loads(progress_path.read_text())['fraction']
+                except (OSError, ValueError, KeyError):
+                    fraction = 0
+                progress(fraction)
+                time.sleep(.3)
+        finally:
+            if process.poll() is None:
+                process.terminate()
+                try:
+                    process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    process.kill(); process.wait()
+            request.unlink(missing_ok=True)
+    if process.returncode:
+        lines = log_path.read_text(errors='replace').strip().splitlines()
+        raise RuntimeError(f"{head} analysis failed: {lines[-1] if lines else 'unknown error'}. See {log_path.name}.")
+    with np.load(output, allow_pickle=False) as data:
+        result = data['starts'], data['scores'], data['valid'].astype(bool)
+    validate_predictions(*result, len(CLASSES[head]))
+    return result, json.loads(provenance_path.read_text())

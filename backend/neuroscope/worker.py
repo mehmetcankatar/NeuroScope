@@ -11,8 +11,8 @@ import numpy as np
 from .config import Settings, CLASSES
 from .db import Store, atomic_json
 from .demo import predictions as demo_predictions
-from .models import Cancelled, model_status, run_morgoth
-from .pipeline import build_events, build_sleep, quality_intervals, validate_predictions
+from .models import Cancelled, model_status, run_model
+from .pipeline import build_events, build_sleep, build_native_sleep, quality_intervals, validate_predictions
 
 
 @contextmanager
@@ -39,8 +39,8 @@ def process_run(store, settings, run):
     directory.mkdir(exist_ok=True)
     heads = run["config"]["heads"]
     results = {"events": [], "sleep": [], "quality": {}, "coverage": {}, "provenance": {},
-               "source": "synthetic" if recording["kind"] == "synthetic" else "morgoth",
-               "notice": "Synthetic demonstration; not MORGOTH predictions" if recording["kind"] == "synthetic" else "Research predictions; review required"}
+               "source": run['source'],
+               "notice": "Synthetic demonstration; not model predictions" if recording["kind"] == "synthetic" else "Research predictions; review required"}
     statuses = {h: {"status": "queued", "error": None} for h in heads}
     start_time = time.monotonic()
     last_progress = 0.0
@@ -70,23 +70,25 @@ def process_run(store, settings, run):
                     readiness = model_status(settings)[head]
                     if not readiness["ready"]:
                         raise ValueError(readiness["reason"])
-                    (starts, scores, valid), provenance = run_morgoth(
+                    (starts, scores, valid), provenance = run_model(
                         settings, recording, head, directory, cancelled,
                         lambda x: progress((hi + x) / len(heads)))
                 validate_predictions(starts, scores, valid, len(CLASSES[head]))
                 target = directory / f"{head}.npz"
                 tmp = target.with_suffix(".tmp.npz")
-                np.savez_compressed(tmp, starts=starts, scores=scores, valid=valid)
+                window_s, stride_s = provenance['window_s'], provenance['stride_s']
+                np.savez_compressed(tmp, starts=starts, scores=scores, valid=valid, window_s=window_s, stride_s=stride_s)
                 tmp.replace(target)
-                gaps, coverage_s = quality_intervals(starts, valid, recording["duration_s"])
+                gaps, coverage_s = quality_intervals(starts, valid, recording["duration_s"], window_s, stride_s)
                 results["quality"][head] = gaps
                 results["coverage"][head] = {"scored_s": coverage_s, "total_s": recording["duration_s"],
                                              "fraction": coverage_s / recording["duration_s"]}
                 results["provenance"][head] = provenance
                 if head == "sleep":
-                    results["sleep"] = build_sleep(run_id, starts, scores, valid, recording["duration_s"])
+                    builder = build_native_sleep if window_s == 30 and stride_s == 30 else build_sleep
+                    results["sleep"] = builder(run_id, starts, scores, valid, recording["duration_s"])
                 else:
-                    results["events"].extend(build_events(run_id, head, starts, scores, valid, run["config"]))
+                    results["events"].extend(build_events(run_id, head, starts, scores, valid, run["config"], window_s, stride_s))
                 statuses[head]["status"] = "complete"
                 atomic_json(directory / "results.json", results)
             except Cancelled:
