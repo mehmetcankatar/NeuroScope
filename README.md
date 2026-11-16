@@ -40,7 +40,7 @@ python -m neuroscope
 
 If pnpm is missing, install with `npm install -g pnpm@11`. On Windows activate with `.venv\Scripts\Activate.ps1`. Linux LightGBM may require the distribution's OpenMP runtime (`libgomp1`). The macOS adapter loads the OpenMP runtime bundled with the pinned PyTorch wheel.
 
-Open [http://127.0.0.1:8000](http://127.0.0.1:8000), choose **Import EDF**, then **Start analysis**. Keep the launcher running. If your local `.env` specifies another port, use that port instead. Model setup shows which models are configured. A fresh clone needs the setup command because weights and machine-specific registries are intentionally excluded from Git.
+Open [[[http://127.0.0.1:8000](http://127.0.0.1:8002/)](http://127.0.0.1:8002/)](http://127.0.0.1:8000), choose **Import EDF**, then **Start analysis**. Keep the launcher running. If your local `.env` specifies another port, use that port instead. Model setup shows which models are configured. A fresh clone needs the setup command because weights and machine-specific registries are intentionally excluded from Git.
 
 For UI/demo development only, install `.[dev]` and skip model setup. **Explore the demo** creates synthetic signals and scripted scores.
 
