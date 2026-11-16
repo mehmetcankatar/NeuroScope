@@ -1,7 +1,7 @@
 import csv
 import html
 import io
-import json
+from .serialization import json_dumps
 
 
 def safe_cell(value):
@@ -37,5 +37,5 @@ def html_export(payload):
 <p>Recording-relative timestamps; estimated model intervals. Research use, not medical advice or a final clinical report.</p>
 <h2>Event candidates</h2><table><tr><th>Model finding</th><th>Model interval</th><th>Review</th><th>Notes</th></tr>{rows}</table>
 <h2>Sleep epochs</h2><table><tr><th>Model stage</th><th>Interval</th><th>Review</th><th>Corrected stage</th></tr>{sleep}</table>
-<h2>Coverage and provenance</h2><pre>{esc(json.dumps({"coverage":payload["coverage"],"provenance":payload["provenance"],"config":payload["run"]["config"]},indent=2))}</pre>
-<h2>Append-only review history (includes boundary corrections)</h2><pre>{esc(json.dumps(payload["annotations"],indent=2))}</pre></html>'''
+<h2>Coverage and provenance</h2><pre>{esc(json_dumps({"coverage":payload["coverage"],"provenance":payload["provenance"],"config":payload["run"]["config"]},indent=2))}</pre>
+<h2>Append-only review history (includes boundary corrections)</h2><pre>{esc(json_dumps(payload["annotations"],indent=2))}</pre></html>'''

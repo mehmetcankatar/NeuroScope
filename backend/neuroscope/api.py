@@ -7,7 +7,9 @@ from fastapi import FastAPI, File, UploadFile, HTTPException, Query, Request
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from .config import Settings, CLASSES
+from . import __version__
 from .db import Store, new_id
+from .serialization import json_dumps, to_jsonable
 from .signals import demo_recording, inspect_edf, waveform
 from .models import model_status
 from .schemas import AnalysisRequest, AnnotationRequest
@@ -16,13 +18,13 @@ from .exporting import csv_export, html_export
 
 
 def public_recording(record):
-    return {k: v for k, v in record.items() if k not in ("path", "mapping")}
+    return to_jsonable({k: v for k, v in record.items() if k not in ("path", "mapping")})
 
 
 def create_app(settings=None):
     settings = settings or Settings.from_env()
     store = Store(settings.data_dir)
-    app = FastAPI(title="NeuroScope API", version="0.1.0", docs_url="/api/docs", openapi_url="/api/openapi.json")
+    app = FastAPI(title="NeuroScope API", version=__version__, docs_url="/api/docs", openapi_url="/api/openapi.json")
     app.state.store = store
     app.state.settings = settings
 
@@ -62,8 +64,8 @@ def create_app(settings=None):
             "source": run["source"], "notice": "Analysis has not produced results yet"}
         annotations = store.annotations(id)
         results["events"], results["sleep"] = apply_reviews(results["events"], results["sleep"], annotations)
-        return {**results, "annotations": annotations, "run": run,
-                "recording": public_recording(recording_or_404(run["recording_id"]))}
+        return to_jsonable({**results, "annotations": annotations, "run": run,
+                "recording": public_recording(recording_or_404(run["recording_id"]))})
 
     @app.get("/api/health")
     def health():
@@ -72,7 +74,7 @@ def create_app(settings=None):
             heartbeat = json.loads(heartbeat_path.read_text())["time"]
         except (OSError, ValueError, KeyError):
             heartbeat = 0
-        return {"status": "ok", "worker_online": time.time() - heartbeat < 15, "version": "0.1.0"}
+        return {"status": "ok", "worker_online": time.time() - heartbeat < 15, "version": __version__}
 
     @app.get("/api/models")
     def models():
@@ -230,7 +232,7 @@ def create_app(settings=None):
     def export(id: str, format: str = "json"):
         payload = results_for(id)
         if format == "json":
-            body, media = json.dumps(payload, indent=2, allow_nan=False), "application/json"
+            body, media = json_dumps(payload, indent=2), "application/json"
         elif format == "csv":
             body, media = csv_export(payload), "text/csv"
         elif format == "html":

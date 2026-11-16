@@ -85,7 +85,7 @@ def test_threshold_validation(env):
     assert client.post(f'/api/recordings/{rec["id"]}/analyses',json={'enter_threshold':.4,'exit_threshold':.8}).status_code==422
 
 
-def test_real_edf_import_serializes_metadata(env, tmp_path):
+def test_real_edf_import_serializes_metadata(env, tmp_path, monkeypatch):
     import mne
     import numpy as np
     from neuroscope.config import EEG_CHANNELS
@@ -94,6 +94,17 @@ def test_real_edf_import_serializes_metadata(env, tmp_path):
                          mne.create_info(EEG_CHANNELS, 200, 'eeg'), verbose='ERROR')
     path = tmp_path / 'input.edf'
     raw.export(path, fmt='edf', overwrite=True, verbose='ERROR')
+    # Reproduce MNE's n_times type at the reader/persistence boundary, even if
+    # the reader already casts that field. Exercise nested scientific types too.
+    from neuroscope.signals import inspect_edf
+    def numpy_metadata(*args):
+        record = inspect_edf(*args)
+        record['n_samples'] = np.int64(record['n_samples'])
+        record['sample_rate'] = np.float64(record['sample_rate'])
+        record['capabilities']['seizure']['supported'] = np.bool_(True)
+        record['channels'] = np.array(record['channels'])
+        return record
+    monkeypatch.setattr('neuroscope.api.inspect_edf', numpy_metadata)
     response = client.post('/api/recordings', files={'file': ('input.edf', path.read_bytes())})
     assert response.status_code == 201, response.text
     record = response.json()
@@ -102,6 +113,12 @@ def test_real_edf_import_serializes_metadata(env, tmp_path):
     assert store.recording(record['id'])['sha256'] == record['sha256']
     assert record['capabilities']['seizure']['supported']
     assert not record['capabilities']['abnormal']['supported']
+    displayed = client.get(f'/api/recordings/{record["id"]}/waveform?start=0&end=1&points=300')
+    assert displayed.status_code == 200, displayed.text
+    wave = displayed.json()
+    assert wave['sample_rate'] == 200 and wave['times'][0] == 0
+    assert wave['channels'][0]['name'] == EEG_CHANNELS[0]
+    np.testing.assert_allclose(wave['channels'][0]['max'], raw.get_data()[0, :200] * 1e6, atol=.001)
 
 
 def test_omitted_heads_select_only_supported_ready_models(env, monkeypatch):

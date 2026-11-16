@@ -1,5 +1,9 @@
 # NeuroScope
 
+**v0.1.1:** NumPy-safe EDF uploads and persistence. If an old local server still
+reports an `int64` JSON error, restart it and confirm v0.1.1 in the sidebar.
+See [the fix and real-recording test results](docs/EDF_UPLOAD_FIX.md).
+
 An EEG review workspace that runs pretrained models locally, turns their scores into timestamped candidates, and links every finding to the original waveform.
 
 **Real EDF analysis now uses public SPaRCNet and YASA models. No account, API key, model training, or manual labeling is required.** The synthetic demo remains separately labeled. Uploaded EEG never falls back to scripted predictions.

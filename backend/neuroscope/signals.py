@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import mne
 from .config import EEG_CHANNELS, SLEEP_CHANNELS
+from .serialization import to_jsonable
 
 ALIASES = {"T7": "T3", "T8": "T4", "P7": "T5", "P8": "T6"}
 
@@ -102,11 +103,11 @@ def inspect_edf(path: Path, recording_id: str, display_name: str):
                 problems.append('YASA is trained on full-night PSG. Check EEG reference and recording suitability before interpreting sleep stages.')
             if any(re.search(r'-\d+$', name) for name in raw.ch_names):
                 problems.append('Duplicate channel labels detected. Analysis verifies that duplicate derivations agree.')
-        return {"id": recording_id, "name": display_name, "kind": "edf", "duration_s": duration,
+        return to_jsonable({"id": recording_id, "name": display_name, "kind": "edf", "duration_s": duration,
                 "sample_rate": float(raw.info["sfreq"]), "n_samples": int(raw.n_times), "channels": raw.ch_names,
                 "mapping": mapping, "capabilities": caps, "warnings": problems, "channel_rates": rates,
                 "created": time.time(), "sha256": sha256_file(path), "time_basis": "recording-relative",
-                "source": "Uploaded recording", "path": str(path)}
+                "source": "Uploaded recording", "path": str(path)})
     finally:
         raw.close()
 
@@ -141,10 +142,10 @@ def waveform(recording, start_s, end_s, channels, points=1400, montage="recorded
         highs.append(np.maximum.reduceat(row, starts))
     def clean(array):
         return [float(x) if np.isfinite(x) else None for x in array]
-    return {"times": times[starts].tolist(), "channels": [
+    return to_jsonable({"times": times[starts].tolist(), "channels": [
         {"name": n, "min": clean(lo), "max": clean(hi)} for n, lo, hi in zip(names, lows, highs)],
         "units": "µV", "montage": montage, "start_s": float(times[0]), "end_s": end_s,
-        "sample_rate": recording["sample_rate"], "decimated": stride > 1}
+        "sample_rate": recording["sample_rate"], "decimated": stride > 1})
 
 
 DEMO_EVENTS = [(194, 219, "abnormal"), (728, 772, "seizure"), (1408, 1442, "LPD"),
