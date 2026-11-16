@@ -4,6 +4,7 @@ import json
 import sqlite3
 import time
 import uuid
+from .serialization import json_dumps, to_jsonable
 from pathlib import Path
 
 
@@ -47,7 +48,7 @@ class Store:
 
     def add_recording(self, body):
         with self.connect() as db:
-            db.execute("INSERT INTO recordings VALUES (?,?)", (body["id"], json.dumps(body)))
+            db.execute("INSERT INTO recordings VALUES (?,?)", (body["id"], json_dumps(body)))
 
     def recordings(self):
         with self.connect() as db:
@@ -63,7 +64,7 @@ class Store:
         body.update(created=now, updated=now, progress=0, status="queued")
         with self.connect() as db:
             db.execute("INSERT INTO runs VALUES (?,?,?,?,?,?,?)",
-                       (body["id"], body["recording_id"], "queued", now, now, 0, json.dumps(body)))
+                       (body["id"], body["recording_id"], "queued", now, now, 0, json_dumps(body)))
 
     def run(self, id):
         with self.connect() as db:
@@ -82,9 +83,9 @@ class Store:
             db.execute("BEGIN IMMEDIATE")
             row = db.execute("SELECT body FROM runs WHERE id=?", (id,)).fetchone()
             body = json.loads(row[0])
-            body.update(changes, updated=time.time())
+            body.update(to_jsonable(changes), updated=time.time())
             db.execute("UPDATE runs SET status=?,heartbeat=?,body=? WHERE id=?",
-                       (body["status"], time.time(), json.dumps(body), id))
+                       (body["status"], time.time(), json_dumps(body), id))
         return body
 
     def claim(self):
@@ -97,7 +98,7 @@ class Store:
             body = json.loads(row["body"])
             body.update(status="running", updated=time.time())
             db.execute("UPDATE runs SET status='running', heartbeat=?, body=? WHERE id=?",
-                       (time.time(), json.dumps(body), row["id"]))
+                       (time.time(), json_dumps(body), row["id"]))
             return body
 
     def recover(self):
@@ -108,7 +109,7 @@ class Store:
                 body = json.loads(row["body"])
                 status = "cancelled" if row["cancel"] else "queued"
                 body.update(status=status, message="Recovered after worker restart")
-                db.execute("UPDATE runs SET status=?,body=? WHERE id=?", (status, json.dumps(body), row["id"]))
+                db.execute("UPDATE runs SET status=?,body=? WHERE id=?", (status, json_dumps(body), row["id"]))
 
     def cancel(self, id):
         with self.connect() as db:
@@ -118,10 +119,10 @@ class Store:
             self.update_run(id, status="cancelled")
 
     def annotate(self, run_id, body):
-        body = {**body, "id": new_id(), "created": time.time(), "run_id": run_id}
+        body = {**to_jsonable(body), "id": new_id(), "created": time.time(), "run_id": run_id}
         with self.connect() as db:
             db.execute("INSERT INTO annotations VALUES (?,?,?,?)",
-                       (body["id"], run_id, body["created"], json.dumps(body)))
+                       (body["id"], run_id, body["created"], json_dumps(body)))
         return body
 
     def annotations(self, run_id):
@@ -134,5 +135,5 @@ def atomic_json(path, body):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(body, allow_nan=False), encoding="utf-8")
+    tmp.write_text(json_dumps(body), encoding="utf-8")
     tmp.replace(path)
